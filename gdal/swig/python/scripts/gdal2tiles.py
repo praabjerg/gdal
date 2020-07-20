@@ -2764,8 +2764,8 @@ class GDAL2Tiles(object):
         args = {}
         args['title'] = self.options.title
         args['south'], args['west'], args['north'], args['east'] = self.swne
-        args['centerlon'] = (args['north'] + args['south']) / 2.
-        args['centerlat'] = (args['west'] + args['east']) / 2.
+        args['centerlat'] = (args['north'] + args['south']) / 2.
+        args['centerlon'] = (args['west'] + args['east']) / 2.
         args['minzoom'] = self.tminz
         args['maxzoom'] = self.tmaxz
         args['beginzoom'] = self.tmaxz
