@@ -68,7 +68,7 @@ resampling_list = (
     'average', 'near', 'bilinear', 'cubic', 'cubicspline', 'lanczos',
     'antialias', 'mode', 'max', 'min', 'med', 'q1', 'q3')
 profile_list = ('mercator', 'geodetic', 'raster')
-webviewer_list = ('all', 'google', 'openlayers', 'leaflet', 'none')
+webviewer_list = ('all', 'google', 'openlayers', 'leaflet', 'oldmap', 'none')
 
 threadLocal = threading.local()
 
@@ -1790,6 +1790,13 @@ class GDAL2Tiles(object):
                     with open(os.path.join(self.output_folder, 'leaflet.html'), 'wb') as f:
                         f.write(self.generate_leaflet().encode('utf-8'))
 
+            # Generate meta.json
+            if self.options.webviewer in ('all', 'oldmap'):
+                if (not self.options.resume or not
+                        os.path.exists(os.path.join(self.output_folder, 'positioning.json'))):
+                    with open(os.path.join(self.output_folder, 'positioning.json'), 'wb') as f:
+                        f.write(self.generate_oldmap().encode('utf-8'))
+
         elif self.options.profile == 'geodetic':
 
             west, south = self.ominx, self.ominy
@@ -2744,6 +2751,43 @@ class GDAL2Tiles(object):
     </script>
 </body>
 </html>"""
+
+        return s
+
+    def generate_oldmap(self):
+        """
+        Partial template for Oldmap layer metadata.
+        It returns filled string. Expected variables:
+        title, north, south, east, west, minzoom, maxzoom, tile_size, tileformat, publishurl
+        """
+
+        args = {}
+        args['title'] = self.options.title
+        args['south'], args['west'], args['north'], args['east'] = self.swne
+        args['centerlon'] = (args['north'] + args['south']) / 2.
+        args['centerlat'] = (args['west'] + args['east']) / 2.
+        args['minzoom'] = self.tminz
+        args['maxzoom'] = self.tmaxz
+        args['beginzoom'] = self.tmaxz
+        args['tileformat'] = self.tileext
+        args['copyright'] = self.options.copyright.replace('"', '\\"')
+
+        s = """{
+    "center": {
+        "lat": %(centerlat)s,
+        "lon": %(centerlon)s
+    },
+    "bounds": {
+        "nw": {
+            "lat": %(north)s,
+            "lon": %(west)s
+        },
+        "se": {
+            "lat": %(south)s,
+            "lon": %(east)s
+        }
+    },
+}""" % args    # noqa
 
         return s
 
